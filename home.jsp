@@ -1,8 +1,9 @@
-<%@ page language="java" contentType="text/html; charset=ISO-8859-1" pageEncoding="ISO-8859-1"%>
+<%@ page language="java" contentType="text/html; charset=ISO-8859-1"
+    pageEncoding="ISO-8859-1"%>
 <%@ page import="java.sql.*,java.sql.DriverManager,java.sql.SQLException" %>
 <%@ page import="java.sql.Date,java.sql.Time,java.sql.Timestamp,java.time.LocalDate,java.time.LocalTime,java.time.LocalDateTime,java.time.format.DateTimeFormatter" %>
 <%
-String username = ""; // You can assign a default value or retrieve it from a session, request, etc.
+ // You can assign a default value or retrieve it from a session, request, etc.
 Connection connection = null;
 %>
 
@@ -12,14 +13,15 @@ Connection connection = null;
 <meta charset="ISO-8859-1">
 <title>Insert title here</title>
 <link rel="stylesheet" href="./css/Style.css">
+<script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
 </head>
 <body>
 
     <nav>
         <ul>
-            <li><a href="#section1">Section 1</a></li>
-            <li><a href="#section2">Section 2</a></li>
-            <li><a href="#section3">Section 3</a></li>
+            <li><a href="#section1">Contact</a></li>
+            <li><a href="#section2">Reservation</a></li>
+            <li><a href="#section3">Booking Details</a></li>
         </ul>
     </nav>
 
@@ -30,13 +32,13 @@ Connection connection = null;
                 <th>Name</th>
                 <th>Email</th>
                 <th>Phone</th>
-                <th>Currency</th>
+                <th>Country</th>
             </tr>
             <tr>
-                <td>Sheran Randika</td>
-                <td>sheran@gmail.com</td>
-                <td>(070) 570-4651</td>
-                <td>LKR</td>
+                <td id ="name"></td>
+                <td id ="email"></td>
+                <td id ="phone"></td>
+                <td id="country"></td>
             </tr>
         </table>
     </section>
@@ -72,7 +74,9 @@ Connection connection = null;
                 <option value="Monaragala">Monaragala</option>
                 <option value="Ratnapura">Ratnapura</option>
                 <option value="Kegalle">Kegalle</option>
-            </select>
+            </select>	
+            
+            <input type="hidden" id="usernameForInsert" name="usernameForInsert" value="">
 
             <label for="mileage">Mileage:</label>
             <input type="number" id="mileage" name="mileage" required>
@@ -94,7 +98,7 @@ Connection connection = null;
             <label for="message">Message:</label>
             <textarea id="message" name="message" rows="4"></textarea>
 
-            <input type="submit" value="Submit" name="submit">
+            <input type="submit" value="Submit" id="submit" name="submit">
         </form>
     </section>
     
@@ -107,7 +111,8 @@ Connection connection = null;
 		 // Retrieve form parameters
 		    String location = request.getParameter("location");
 		    int mileage = Integer.parseInt(request.getParameter("mileage"));
-		    
+		    String username = request.getParameter("usernameForInsert");
+		    System.out.println(username);
 		 // Parse date
 		    Date date = Date.valueOf(LocalDate.parse(request.getParameter("date")));
 
@@ -137,7 +142,7 @@ Connection connection = null;
 		             preparedStatement.setInt(4, mileage);
 		             preparedStatement.setString(5, vehicleType);
 		             preparedStatement.setString(6, message);
-		             preparedStatement.setString(7, "shera@gmail.com");
+		             preparedStatement.setString(7, username);
 		
 		            preparedStatement.executeUpdate();
 		        }
@@ -187,11 +192,11 @@ Connection connection = null;
                 try {
                     Class.forName("com.mysql.cj.jdbc.Driver");
                     connection = DriverManager.getConnection(url, user, password);
-                    String userNameForSelect = request.getParameter("usernameForSelect");
+                    String unForSelect = request.getParameter("usernameForSelect");
 
                     String sql = "SELECT * FROM vehicle_service WHERE username = ?";
                     PreparedStatement stmt = connection.prepareStatement(sql);
-                    stmt.setString(1, "shera@gmail.com");
+                    stmt.setString(1, unForSelect);
                     rs = stmt.executeQuery();
 
                     if (rs.next()) {
@@ -285,8 +290,86 @@ Connection connection = null;
         }
     %>
 </section>
+<script>
+
+$(document).ready(function() {
+	var accessToken = localStorage.getItem('accessToken');
+	var idToken = localStorage.getItem('idToken');
+	
+	console.log(accessToken);
+	if(accessToken && idToken){
+		   var settings = {
+		            "url": 'https://api.asgardeo.io/t/sheran/oauth2/userinfo',
+		            "method": "GET",
+		            "timeout": 0,
+		            "headers": {
+		                "Authorization": "Bearer " + accessToken
+		            },
+		        };
+	
+		        $.ajax(settings)
+		            .done(function (response) {
+		                //console.log(response);
+		                var username =  response.username;
+		                var given_name = response.given_name;
+		                var phone = response.phone_number;
+		                var email = response.email;
+		                var username = response.username;
+						var address = response.address;
+		                var country = address.country;
+		          //      console.log(username);
+		          //      console.log(country);
+		                
+		                
+		                document.getElementById('name').textContent = given_name;
+		                document.getElementById('email').textContent = email;
+		                document.getElementById('phone').textContent = phone;
+		                document.getElementById('country').textContent = country;
+		                
+		            
+		                localStorage.setItem('username', username);
+		            
+		                 
+		             
+		            })
+		            .fail(function (jqXHR, textStatus, errorThrown) {
+		                // Handle any errors here
+		                console.error('Error:', errorThrown);
+		                alert("Authorization error. Login again!");
+		                window.location.href = "./index.jsp";
+		            });
+	}
+	
+	
+    var username = localStorage.getItem('username')
+    console.log(username);
+     
+     document.getElementById('submit').addEventListener('click', function () {
+         // Set the username as a hidden field value in the form
+         document.getElementById('usernameForInsert').value = username;
+      });
+     
+     document.getElementById('reservations').addEventListener('click', function () {
+         // Set the username as a hidden field value in the form
+         document.getElementById('usernameForSelect').value = username;
+      });
+     
+     
+     
+     	//const idToken = localStorage.getItem('idToken');
+ 	
+ 		const state = localStorage.getItem('sessionState');
+
+ 	
+    document.getElementById("client-id").value = "2zGvdGwcZlHJf6Mvf01VIypHfzQa";
+    document.getElementById("post-logout-redirect-uri").value = "http://localhost:8080/VehicalServiceReservation/index.jsp";
+    document.getElementById("state").value = state;
     
     
     
+	
+});
+	 
+</script>
 </body>
 </html>
